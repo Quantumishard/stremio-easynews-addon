@@ -256,6 +256,7 @@ function mapStream({
     behaviorHints: {
       fileName: title,
       videoSize,
+      bingeGroup: 'Easynews+-' + (quality || 'default'),
     } as Stream['behaviorHints'],
   };
 }
