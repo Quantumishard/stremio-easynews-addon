@@ -29,7 +29,7 @@ export class EasynewsAPI {
     const searchParams = {
       st: 'adv',
       sb: '1',
-      fex: 'm4v,3gp,mov,divx,xvid,wmv,avi,mpg,mpeg,mp4,mkv,avc,flv,webm',
+      fex: 'm4v,3gp,mov,divx,xvid,wmv,avi,mpg,mpeg,mp4,mkv,avc,flv,webm,ts',
       'fty[]': 'VIDEO',
       spamf: '1',
       u: '1',
@@ -43,7 +43,7 @@ export class EasynewsAPI {
       s3: sort3,
       s3d: sort3Direction,
       pby: maxResults.toString(),
-      safeO: '0',
+      safeO: '1',
       gps: query,
     };
 
