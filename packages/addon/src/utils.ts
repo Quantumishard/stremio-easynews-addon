@@ -34,19 +34,27 @@ export function sanitizeTitle(title: string) {
   );
 }
 
-export function matchesTitle(title: string, query: string, strict: boolean) {
+export function matchesTitle(
+  title: string,
+  query: string,
+  strict: boolean
+): boolean {
+  const sanitizedTitle = sanitizeTitle(title);
   const sanitizedQuery = sanitizeTitle(query);
 
   if (strict) {
     const { title: movieTitle } = parseTorrentTitle(title);
+
     if (movieTitle) {
-      return sanitizeTitle(movieTitle) === sanitizedQuery;
+      return sanitizeTitle(movieTitle).includes(sanitizedQuery);
     }
   }
 
-  const sanitizedTitle = sanitizeTitle(title);
-  const re = new RegExp(`\\b${sanitizedQuery}\\b`, 'i'); // match the whole word; e.g. query "deadpool 2" shouldn't match "deadpool 2016"
-  return re.test(sanitizedTitle);
+  const queryWords = sanitizedQuery.split(' ');
+
+  // Require every query word to appear somewhere in the title,
+  // but not necessarily next to each other.
+  return queryWords.every(word => sanitizedTitle.includes(word));
 }
 
 export function createStreamUrl(
