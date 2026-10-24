@@ -76,9 +76,8 @@ builder.defineMetaHandler<Config>(
       const videos: MetaVideo[] = [];
 
       const api = new EasynewsAPI({ username, password });
-      // A search catalog only needs a useful first page. Fetching every page
-      // can exceed the Worker request timeout for broad EasyNews searches.
-      const res = await api.search({ query: search, maxResults: 100 });
+      // Fetch up to 1,000 candidates within the shared search deadline.
+      const res = await api.searchAll({ query: search, maxResults: 1000 });
 
       for (const file of res?.data ?? []) {
         const title = getPostTitle(file);
