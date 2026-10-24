@@ -1,3 +1,15 @@
+# Custom Easynews Cloudflare Worker
+
+A fork of [sleeyax/stremio-easynews-addon](https://github.com/sleeyax/stremio-easynews-addon), with direct **HTTP playback preserved**, optional **NZB import and playback through AIOStreams**, and restored public Easynews thumbnail URLs.
+
+**[Setup and deployment instructions](packages/cloudflare-worker/NZB-PLAYBACK.md)** cover Cloudflare deployment, private secrets, AIOStreams configuration, Harbor/Stremio installation, and troubleshooting.
+
+This branch backs up the custom Worker source. No real account credentials, cookies, configured manifest URLs, Cloudflare account files, or private playback links are included. Bring your own Easynews account and, optionally, a reachable self-hosted AIOStreams instance. The tested ElfHosted API access was blocked; its separate Harbor browser-login integration is not part of this Worker.
+
+The original addon documentation follows.
+
+---
+
 # Easynews+
 
 > [!NOTE]  

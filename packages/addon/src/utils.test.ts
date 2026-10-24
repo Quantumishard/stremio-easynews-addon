@@ -1,6 +1,11 @@
-import { expect, it, test } from 'vitest';
-import { matchesTitle, sanitizeTitle } from './utils.js';
-import { describe } from 'node:test';
+import { describe, expect, it } from 'vitest';
+import {
+  createThumbnailUrl,
+  isBadVideo,
+  matchesTitle,
+  sanitizeTitle,
+} from './utils.js';
+import type { EasynewsSearchResponse, FileData } from '@easynews/api';
 
 describe('sanitizeTitle', () => {
   // See also: https://github.com/sleeyax/stremio-easynews-addon/issues/38#issuecomment-2467015435.
@@ -42,9 +47,69 @@ describe('matchesTitle', () => {
     ['Fête du cinéma', 'Fete', false],
     ['Fête du cinéma', 'Fête', true],
     // ignore special characters
-    ['Am_er-ic.a the Beautiful', 'America the Beautiful', false],
-    ['Am_er-ic.a the Beautiful', 'Am er ic a the Beautiful', true],
-  ])("matches the title '%s' with query '%s'", (title, query, expected) => {
-    expect(matchesTitle(title, query, false)).toBe(expected);
+    ['Am_er-ic.a the Beautiful', 'America the Beautiful', false, true],
+    ['Am_er-ic.a the Beautiful', 'Am er ic a the Beautiful', true, false],
+    // Match title words even when release names insert extra words between them.
+    [
+      'Mission Impossible Dead Reckoning Part One 2023 1080p',
+      'Mission Impossible Dead Reckoning',
+      true,
+      false,
+    ],
+    // Do not match a query word inside another word.
+    ['The Witcher S01E01', 'The It', false, false],
+  ])(
+    "matches the title '%s' with query '%s'",
+    (title, query, expected, strict = false) => {
+      expect(matchesTitle(title, query, strict)).toBe(expected);
+    }
+  );
+
+  it('matches a parsed movie title when the query is a title fragment', () => {
+    expect(
+      matchesTitle(
+        'Mission.Impossible.Dead.Reckoning.Part.One.2023.1080p.BluRay.x264',
+        'Mission Impossible Dead Reckoning',
+        true
+      )
+    ).toBe(true);
   });
+});
+
+describe('isBadVideo', () => {
+  it('accepts a transport-stream file that EasyNews does not classify as VIDEO', () => {
+    const file = {
+      '2': '',
+      '11': '.ts',
+      '14': '45m',
+      passwd: false,
+      virus: false,
+      type: 'OTHER',
+    } as unknown as FileData;
+
+    expect(isBadVideo(file)).toBe(false);
+  });
+
+  it('does not reject a supported video because of its reported duration', () => {
+    const file = {
+      '2': '.mp4',
+      '11': '.mp4',
+      '14': '2m',
+      passwd: false,
+      virus: false,
+      type: 'VIDEO',
+    } as unknown as FileData;
+
+    expect(isBadVideo(file)).toBe(false);
+  });
+});
+
+it('restores public preview URLs without download suffixes or filename paths', () => {
+  const key = 'abc' + 'd'.repeat(38);
+  expect(
+    createThumbnailUrl(
+      { thumbURL: 'https://old.invalid/' } as EasynewsSearchResponse,
+      { '0': key + '1234', '10': 'A title / with spaces' } as FileData
+    )
+  ).toBe(`https://th.easynews.com/thumbnails-abc/pr-${key}.jpg`);
 });

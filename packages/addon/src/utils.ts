@@ -3,19 +3,37 @@ import { MetaProviderResponse } from './meta.js';
 import { ContentType } from '@stremio-addon/sdk';
 import { parse as parseTorrentTitle } from 'parse-torrent-title';
 
+const videoExtensions = new Set([
+  '.m4v',
+  '.3gp',
+  '.mov',
+  '.divx',
+  '.xvid',
+  '.wmv',
+  '.avi',
+  '.mpg',
+  '.mpeg',
+  '.mp4',
+  '.mkv',
+  '.avc',
+  '.flv',
+  '.webm',
+  '.ts',
+]);
+
 export function isBadVideo(file: FileData) {
-  const duration = file['14'] ?? '';
+  const extensions = [file['2'], file['11']].map((extension) =>
+    extension?.toLowerCase()
+  );
 
   return (
-    // <= 5 minutes in duration
-    duration.match(/^\d+s/) ||
-    duration.match('^[0-5]m') ||
     // password protected
     file.passwd ||
     // malicious
     file.virus ||
-    // not a video
-    file.type.toUpperCase() !== 'VIDEO'
+    // not a supported video extension. EasyNews does not consistently
+    // classify transport-stream files as VIDEO, so rely on the extension.
+    !extensions.some((extension) => videoExtensions.has(extension))
   );
 }
 
@@ -50,11 +68,16 @@ export function matchesTitle(
     }
   }
 
-  const queryWords = sanitizedQuery.split(' ');
+  const queryWords = sanitizedQuery.split(' ').filter(Boolean);
 
   // Require every query word to appear somewhere in the title,
   // but not necessarily next to each other.
-  return queryWords.every(word => sanitizedTitle.includes(word));
+  return (
+    queryWords.length > 0 &&
+    queryWords.every((word) =>
+      new RegExp(`\\b${word}\\b`, 'i').test(sanitizedTitle)
+    )
+  );
 }
 
 export function createStreamUrl(
@@ -107,10 +130,10 @@ export function createThumbnailUrl(
   res: EasynewsSearchResponse,
   file: FileData
 ) {
-  const id = file['0'];
-  const idChars = id.slice(0, 3);
-  const thumbnailSlug = file['10'];
-  return `${res.thumbURL}${idChars}/pr-${id}.jpg/th-${thumbnailSlug}.jpg`;
+  // Preview keys omit the download ID suffix and filename slug.
+  const id = (file['0'] ?? '').slice(0, 41);
+  if (id.length < 3) return undefined;
+  return `https://th.easynews.com/thumbnails-${encodeURIComponent(id.slice(0, 3))}/pr-${encodeURIComponent(id)}.jpg`;
 }
 
 export function extractDigits(value: string) {

@@ -30,7 +30,6 @@ export class EasynewsAPI {
       st: 'adv',
       sb: '1',
       fex: 'm4v,3gp,mov,divx,xvid,wmv,avi,mpg,mpeg,mp4,mkv,avc,flv,webm,ts',
-      'fty[]': 'VIDEO',
       spamf: '1',
       u: '1',
       gx: '1',
@@ -52,7 +51,7 @@ export class EasynewsAPI {
 
     const res = await fetch(url, {
       headers: this.headers,
-      signal: AbortSignal.timeout(20_000), // 20 seconds
+      signal: AbortSignal.timeout(60_000), // 60 seconds
     });
 
     if (!res.ok) {
