@@ -9,7 +9,7 @@ Nothing is imported until that choice is selected. AIOStreams handles video byte
 NNTP retrieval, buffering, Range requests, and seeking.
 
 The backup also contains the public-thumbnail URL fix and short response caches.
-Catalog queries retrieve up to 1,000 candidates in 100-result pages, with at most
+Catalog queries retrieve up to 500 candidates in 100-result pages, with at most
 three concurrent page requests and a shared 12-second deadline. Later-page errors
 retain successful results. Title and video filtering can reduce the displayed count.
 It preserves the currently deployed search implementation; it does not incorporate
@@ -145,3 +145,4 @@ npm exec -w packages/cloudflare-worker -- wrangler secret delete AIOSTREAMS_URL
 
 Public thumbnails continue to work without the optional NZB configuration.
 The original MIT license and upstream attribution are retained.
+

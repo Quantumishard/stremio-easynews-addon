@@ -3,13 +3,13 @@ import { addonInterface } from './addon.js';
 
 afterEach(() => vi.unstubAllGlobals());
 
-it('returns matching catalog videos beyond the first 100 with HTTP URLs and thumbnails', async () => {
+it('caps catalog queries at 500 videos with HTTP URLs and thumbnails', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: URL) => {
       const page = Number(url.searchParams.get('pno'));
       return Response.json({
-        numPages: 2,
+      numPages: 100,
         downURL: 'https://members.easynews.com/dl',
         dlFarm: 'auto',
         dlPort: 'auto',
@@ -35,7 +35,7 @@ it('returns matching catalog videos beyond the first 100 with HTTP URLs and thum
     {},
     { username: 'fixture-user', password: 'fixture-password' }
   );
-  expect(result.meta.videos).toHaveLength(200);
+  expect(result.meta.videos).toHaveLength(500);
   expect(result.meta.videos[199].title).toBe('Concert 199');
   expect(result.meta.videos[199].streams[0].url).toContain(
     'members.easynews.com/dl/'

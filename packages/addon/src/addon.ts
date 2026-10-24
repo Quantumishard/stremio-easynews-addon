@@ -76,8 +76,8 @@ builder.defineMetaHandler<Config>(
       const videos: MetaVideo[] = [];
 
       const api = new EasynewsAPI({ username, password });
-      // Fetch up to 1,000 candidates within the shared search deadline.
-      const res = await api.searchAll({ query: search, maxResults: 1000 });
+      // Fetch up to 500 candidates within the shared search deadline.
+      const res = await api.searchAll({ query: search, maxResults: 500 });
 
       for (const file of res?.data ?? []) {
         const title = getPostTitle(file);
@@ -279,3 +279,4 @@ function getCacheOptions(itemsLength: number): Partial<Cache> {
 
 export const addonInterface = builder.getInterface();
 export const landingHTML = landingTemplate(addonInterface.manifest);
+
