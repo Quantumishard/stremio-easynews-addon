@@ -31,6 +31,11 @@ export type EasynewsSearchResponse = {
 };
 
 export type FileData = {
+  hash?: string;
+  id?: string;
+  fn?: string;
+  extension?: FileExtension;
+  subject?: string;
   '0': string;
   '1': string;
   '2': FileExtension;

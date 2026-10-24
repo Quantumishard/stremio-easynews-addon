@@ -1,6 +1,17 @@
 import { expect, it, test } from 'vitest';
-import { matchesTitle, sanitizeTitle } from './utils.js';
+import { createThumbnailUrl, matchesTitle, sanitizeTitle } from './utils.js';
+import type { EasynewsSearchResponse, FileData } from '@easynews/api';
 import { describe } from 'node:test';
+
+it('uses the public thumbnail host and strips the download suffix', () => {
+  const hash = 'abc' + 'd'.repeat(38);
+  expect(
+    createThumbnailUrl(
+      { thumbURL: 'https://old.invalid/' } as EasynewsSearchResponse,
+      { '0': hash + '1234', '10': 'A title / with spaces' } as FileData
+    )
+  ).toBe(`https://th.easynews.com/thumbnails-abc/pr-${hash}.jpg`);
+});
 
 describe('sanitizeTitle', () => {
   // See also: https://github.com/sleeyax/stremio-easynews-addon/issues/38#issuecomment-2467015435.

@@ -54,7 +54,7 @@ export function matchesTitle(
 
   // Require every query word to appear somewhere in the title,
   // but not necessarily next to each other.
-  return queryWords.every(word => sanitizedTitle.includes(word));
+  return queryWords.every((word) => sanitizedTitle.includes(word));
 }
 
 export function createStreamUrl(
@@ -107,10 +107,10 @@ export function createThumbnailUrl(
   res: EasynewsSearchResponse,
   file: FileData
 ) {
-  const id = file['0'];
-  const idChars = id.slice(0, 3);
-  const thumbnailSlug = file['10'];
-  return `${res.thumbURL}${idChars}/pr-${id}.jpg/th-${thumbnailSlug}.jpg`;
+  // Download IDs can include a four-character suffix absent from preview keys.
+  const id = (file.hash ?? file['0'] ?? '').slice(0, 41);
+  if (id.length < 3) return undefined;
+  return `https://th.easynews.com/thumbnails-${encodeURIComponent(id.slice(0, 3))}/pr-${encodeURIComponent(id)}.jpg`;
 }
 
 export function extractDigits(value: string) {
