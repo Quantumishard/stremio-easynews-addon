@@ -19,7 +19,6 @@ export class EasynewsAPI {
     {
       query,
       pageNr = 1,
-      maxResults = 1000,
       sort1 = 'dsize',
       sort1Direction = '-',
       sort2 = 'relevance',
@@ -30,31 +29,25 @@ export class EasynewsAPI {
     signal?: AbortSignal
   ): Promise<EasynewsSearchResponse> {
     const searchParams = {
-      st: 'adv',
-      sb: '1',
-      fex: 'm4v,3gp,mov,divx,xvid,wmv,avi,mpg,mpeg,mp4,mkv,avc,flv,webm,ts',
-      spamf: '1',
+      'fty[]': 'VIDEO',
       u: '1',
-      gx: '1',
       pno: pageNr.toString(),
-      sS: '3',
       s1: sort1,
       s1d: sort1Direction,
       s2: sort2,
       s2d: sort2Direction,
       s3: sort3,
       s3d: sort3Direction,
-      pby: maxResults.toString(),
       safeO: '1',
       gps: query,
     };
 
-    const url = new URL(`${this.baseUrl}/2.0/search/solr-search/advanced`);
+    const url = new URL(`${this.baseUrl}/3.0/api/search`);
     url.search = new URLSearchParams(searchParams).toString();
 
     const res = await fetch(url, {
       headers: this.headers,
-      signal: signal ?? AbortSignal.timeout(60_000),
+      signal: signal ?? AbortSignal.timeout(8_000),
     });
 
     if (!res.ok) {
@@ -63,14 +56,48 @@ export class EasynewsAPI {
       );
     }
 
-    const json = await res.json();
+    const json = (await res.json()) as EasynewsSearchResponse;
+    if (!Array.isArray(json.data)) {
+      throw new Error('Invalid Easynews search response');
+    }
+    // V3 exposes named fields; keep the shared addon's numeric field contract.
+    json.downURL ||= `${this.baseUrl}/dl`;
+    json.dlFarm ||= 'auto';
+    json.dlPort ||= 'auto';
+    json.data = json.data.map((file) => {
+      const raw = file as unknown as Record<string, unknown>;
+      const timestamp = Number(raw.timestamp ?? raw.ts);
+      const date = raw['5']
+        ? new Date(String(raw['5']))
+        : new Date(timestamp * 1000);
+      const posted = Number.isFinite(date.getTime())
+        ? date.toISOString()
+        : new Date(0).toISOString();
+      const extension = String(raw['11'] ?? raw.extension ?? raw.ext ?? '');
+      return {
+        ...file,
+        '0': file['0'] ?? `${file.hash ?? ''}${file.id ?? ''}`,
+        '2': file['2'] ?? extension,
+        '4':
+          file['4'] ?? String(raw.prettySize ?? raw.rawSize ?? raw.size ?? ''),
+        '5': String(posted),
+        '6': file['6'] ?? file.subject,
+        '10': file['10'] ?? file.fn,
+        '11': extension,
+        '14': String(file['14'] ?? raw.prettyRuntime ?? ''),
+        rawSize: Number(raw.rawSize ?? raw.size) || 0,
+        passwd: file.passwd ?? raw.password === true,
+        fullres: file.fullres ?? (raw.yres ? `${raw.yres}p` : ''),
+        type: file.type ?? 'VIDEO',
+      } as FileData;
+    });
 
     return json;
   }
 
   async searchAll(options: SearchOptions): Promise<EasynewsSearchResponse> {
     // Bound broad searches and retain successful pages if a later page fails.
-    const signal = AbortSignal.timeout(12_000);
+    const signal = AbortSignal.timeout(8_000);
     const limit = Math.max(
       1,
       Math.min(1000, Math.floor(options.maxResults ?? 1000) || 1000)

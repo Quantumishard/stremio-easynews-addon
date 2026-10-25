@@ -3,13 +3,52 @@ import { addonInterface } from './addon.js';
 
 afterEach(() => vi.unstubAllGlobals());
 
+it('returns v3 named catalog fields with HTTP URLs, public thumbnails and NZB identities', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: URL) => {
+      expect(url.pathname).toBe('/3.0/api/search');
+      return Response.json({
+        numPages: 1,
+        data: [
+          {
+            hash: 'a'.repeat(41),
+            id: '1234',
+            fn: 'Coachella Concert',
+            extension: '.mkv',
+            timestamp: 1700000000,
+            sig: 'fixture-signature',
+            size: 123456,
+          },
+        ],
+      });
+    })
+  );
+  const result = await addonInterface.get(
+    'meta',
+    'tv',
+    'easynews-plus:Coachella',
+    {},
+    { username: 'fixture-user', password: 'fixture-password' }
+  );
+  const video = result.meta.videos[0];
+  expect(video.id).toBe('easynews-plus:fixture-signature');
+  expect(video.released).toBe('2023-11-14T22:13:20.000Z');
+  expect(video.thumbnail).toBe(
+    `https://th.easynews.com/thumbnails-aaa/pr-${'a'.repeat(41)}.jpg`
+  );
+  expect(video.streams[0].url).toContain(
+    `/dl/auto/auto/${'a'.repeat(41)}1234.mkv/Coachella Concert.mkv`
+  );
+});
+
 it('caps catalog queries at 500 videos with HTTP URLs and thumbnails', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: URL) => {
       const page = Number(url.searchParams.get('pno'));
       return Response.json({
-      numPages: 100,
+        numPages: 100,
         downURL: 'https://members.easynews.com/dl',
         dlFarm: 'auto',
         dlPort: 'auto',
@@ -44,4 +83,3 @@ it('caps catalog queries at 500 videos with HTTP URLs and thumbnails', async () 
     'https://th.easynews.com/thumbnails-'
   );
 });
-

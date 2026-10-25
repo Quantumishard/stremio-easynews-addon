@@ -8,7 +8,7 @@ export type EasynewsSearchResponse = {
   perPage: string;
   numPages: number;
   dlFarm: string;
-  dlPort: number;
+  dlPort: number | string;
   baseURL: string;
   downURL: string;
   thumbURL: string;
@@ -31,6 +31,11 @@ export type EasynewsSearchResponse = {
 };
 
 export type FileData = {
+  hash?: string;
+  id?: string;
+  fn?: string;
+  extension?: FileExtension;
+  subject?: string;
   '0': string;
   '1': string;
   '2': FileExtension;

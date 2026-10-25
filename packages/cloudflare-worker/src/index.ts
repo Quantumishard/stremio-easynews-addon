@@ -15,7 +15,8 @@ const app = new Hono<{ Bindings: PlaybackEnv }>();
 app.get('/health', (c) =>
   c.json(
     {
-      build: 'nzb-playback-3',
+      build: 'nzb-playback-4-v3-search',
+      search: { apiVersion: 3, maxCandidates: 500, deadlineSeconds: 8 },
       nzbEnabled: enabled(c.env),
       settings: {
         url: !!c.env.AIOSTREAMS_URL,
@@ -37,6 +38,7 @@ app.all('/thumbnail/:token', (c) =>
   thumbnail(c.req.raw, c.req.param('token'), c.env)
 );
 app.use('*', async (c, next) => {
+  const start = performance.now();
   await next();
   if (
     !enabled(c.env) ||
@@ -47,7 +49,18 @@ app.use('*', async (c, next) => {
   )
     return;
   const value = await c.res.json();
+  const addonMs = Math.round(performance.now() - start);
   await addNzbOptions(value, new URL(c.req.url).origin, c.env);
+  const videos = (value as { meta?: { videos?: unknown[] } })?.meta?.videos;
+  console.info(
+    'SEARCH_RESPONSE',
+    JSON.stringify({
+      kind: /\/meta\//.test(c.req.path) ? 'meta' : 'stream',
+      videos: Array.isArray(videos) ? videos.length : undefined,
+      addonMs,
+      totalMs: Math.round(performance.now() - start),
+    })
+  );
   const headers = new Headers(c.res.headers);
   // Make option and thumbnail fixes visible to clients after a refresh.
   headers.set('Cache-Control', 'private, max-age=60');

@@ -9,11 +9,11 @@ Nothing is imported until that choice is selected. AIOStreams handles video byte
 NNTP retrieval, buffering, Range requests, and seeking.
 
 The backup also contains the public-thumbnail URL fix and short response caches.
-Catalog queries retrieve up to 500 candidates in 100-result pages, with at most
-three concurrent page requests and a shared 12-second deadline. Later-page errors
+Catalog queries use Easynews API v3 and retrieve up to 500 candidates in 100-result pages, with at most
+three concurrent page requests and a shared eight-second deadline. Later-page errors
 retain successful results. Title and video filtering can reduce the displayed count.
-It preserves the currently deployed search implementation; it does not incorporate
-the separate API v3 work automatically.
+The tested API v3 response mappings preserve file signatures, HTTP download paths,
+timestamps, and public thumbnails. `/health` reports the search version and limits.
 
 ## Requirements
 
@@ -145,4 +145,3 @@ npm exec -w packages/cloudflare-worker -- wrangler secret delete AIOSTREAMS_URL
 
 Public thumbnails continue to work without the optional NZB configuration.
 The original MIT license and upstream attribution are retained.
-

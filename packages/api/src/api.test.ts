@@ -3,6 +3,59 @@ import { EasynewsAPI } from './api.js';
 
 afterEach(() => vi.restoreAllMocks());
 afterEach(() => vi.unstubAllGlobals());
+
+it('uses v3 and normalizes named fields without losing the NZB signature', async () => {
+  const fetcher = vi.fn(async () =>
+    Response.json({
+      data: [
+        {
+          hash: 'a'.repeat(41),
+          id: '1234',
+          fn: 'Concert',
+          extension: '.mkv',
+          timestamp: 1700000000,
+          size: 123456,
+          prettySize: '120 KB',
+          sig: 'fixture-signature',
+          yres: 2160,
+          password: false,
+        },
+      ],
+      numPages: 1,
+    })
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const result = await api().search({ query: 'coachella' });
+  const [url, options] = fetcher.mock.calls[0] as unknown as [URL, RequestInit];
+  expect(url.pathname).toBe('/3.0/api/search');
+  expect(url.searchParams.get('gps')).toBe('coachella');
+  expect((options.headers as Headers).get('Authorization')).toMatch(/^Basic /);
+  expect(result.data[0]).toMatchObject({
+    '0': 'a'.repeat(41) + '1234',
+    '10': 'Concert',
+    '11': '.mkv',
+    '5': '2023-11-14T22:13:20.000Z',
+    rawSize: 123456,
+    sig: 'fixture-signature',
+  });
+  expect(result.downURL).toBe('https://members.easynews.com/dl');
+  expect(result.dlFarm).toBe('auto');
+  expect(result.dlPort).toBe('auto');
+});
+
+it.each([undefined, 'bad-date'])(
+  'normalizes missing or invalid post dates (%s)',
+  async (posted) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({ data: [{ '0': 'id', '5': posted }], numPages: 1 })
+      )
+    );
+    const result = await api().search({ query: 'coachella' });
+    expect(result.data[0]['5']).toBe('1970-01-01T00:00:00.000Z');
+  }
+);
 const api = () =>
   new EasynewsAPI({ username: 'fixture-user', password: 'fixture-password' });
 function fixture(page: number, numPages = 3) {
@@ -16,7 +69,7 @@ function fixture(page: number, numPages = 3) {
 
 it('collects more than 100 results and requests consistent 100-result pages', async () => {
   const fetcher = vi.fn(async (url: URL) => {
-    expect(url.searchParams.get('pby')).toBe('100');
+    expect(url.pathname).toBe('/3.0/api/search');
     return Response.json(fixture(Number(url.searchParams.get('pno'))));
   });
   vi.stubGlobal('fetch', fetcher);
@@ -74,7 +127,7 @@ it('returns earlier results when the shared deadline expires', async () => {
     })
   );
   expect((await api().searchAll({ query: 'concert' })).data).toHaveLength(100);
-  expect(AbortSignal.timeout).toHaveBeenCalledWith(12000);
+  expect(AbortSignal.timeout).toHaveBeenCalledWith(8000);
 });
 
 it('honors a smaller result limit', async () => {
